@@ -14,8 +14,9 @@ jobs:
       matrix:
         config:
           - { name: "windows", os: windows-latest, cc: "cl", cxx: "cl", ext: ".exe" }
-          #- { name: "ubuntu", os: ubuntu-latest, cc: "gcc", cxx: "g++", ext: "" }
-          #- { name: "macos", os: macos-latest, cc: "clang", cxx: "clang++", ext: "" }
+          
+#          - { name: "ubuntu", os: ubuntu-latest, cc: "gcc", cxx: "g++", ext: "" }
+#          - { name: "macos", os: macos-latest, cc: "clang", cxx: "clang++", ext: "" }
         
     steps:
       - name: Checkout
@@ -85,8 +86,9 @@ jobs:
           body_path: release_changelog.txt
           tag_name: ${{ github.ref_name }}-ga
           files: |
+            release_windows/${{ github.event.repository.name }}_windows.exe
+            
 #            release_ubuntu/${{ github.event.repository.name }}_ubuntu
 #            release_macos/${{ github.event.repository.name }}_macos
-            release_windows/${{ github.event.repository.name }}_windows.exe
           
     
