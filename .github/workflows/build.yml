@@ -1,0 +1,92 @@
+# Build script by Lohk V1.0 2024/08/17. Multiplatform enabled.
+name: Build
+
+on:
+  push:
+    branches:    
+      - v*
+
+jobs:
+
+  build:
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - { name: "windows", os: windows-latest, cc: "cl", cxx: "cl", ext: ".exe" }
+          #- { name: "ubuntu", os: ubuntu-latest, cc: "gcc", cxx: "g++", ext: "" }
+          #- { name: "macos", os: macos-latest, cc: "clang", cxx: "clang++", ext: "" }
+        
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          submodules: 'true'
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        if:  ${{ matrix.config.name == 'windows' }} 
+        with:
+          arch: amd64
+
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+
+      - name: Build with CMake
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ runner.workspace }}/build
+          cc: ${{ matrix.config.cc }}
+          cxx: ${{ matrix.config.cxx }}
+          configure-options: -G Ninja
+          build-type: Release
+
+      - name: "Rename for Artifact"
+        run: mv ${{ runner.workspace }}/build/${{ github.event.repository.name }}/${{ github.event.repository.name }}${{ matrix.config.ext }} ${{ runner.workspace }}/build/${{ github.event.repository.name }}/${{ github.event.repository.name }}_${{ matrix.config.name }}${{ matrix.config.ext }}
+
+      - name: Save build folder as artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: release_${{ matrix.config.name }}
+          path: ${{ runner.workspace }}/build/${{ github.event.repository.name }}/${{ github.event.repository.name }}_${{ matrix.config.name }}${{ matrix.config.ext }}
+
+
+   
+  upload-release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          submodules: 'true'
+
+#      - name: "Download back MacOS file"
+#        uses: actions/download-artifact@master
+#        with:
+#          name: release_macos
+#          path: release_macos
+#
+#      - name: "Download back Ubuntu file"
+#        uses: actions/download-artifact@master
+#        with:
+#          name: release_ubuntu
+#          path: release_ubuntu
+
+      - name: "Download back Windows file"
+        uses: actions/download-artifact@master
+        with:
+          name: release_windows
+          path: release_windows
+
+      - name: Release
+        uses: softprops/action-gh-release@master
+        with:
+          body_path: release_changelog.txt
+          tag_name: ${{ github.ref_name }}-ga
+          files: |
+#            release_ubuntu/${{ github.event.repository.name }}_ubuntu
+#            release_macos/${{ github.event.repository.name }}_macos
+            release_windows/${{ github.event.repository.name }}_windows.exe
+          
+    
